@@ -391,16 +391,53 @@ with T[2]:
 # TAB 4 — MEDIATOR ANALYSIS
 # ═══════════════════════════════════════════════
 with T[3]:
-    cs, _ = st.columns([2, 1])
-    with cs:
-        tick_idx = st.slider("Scroll through the conflict timeline",
-                             0, len(SIM_LOG)-1, len(SIM_LOG)-1)
 
-    sel     = SIM_LOG.iloc[tick_idx]
+    # ── playback state ──
+    if "tick" not in st.session_state:
+        st.session_state.tick = len(SIM_LOG) - 1
+    if "playing" not in st.session_state:
+        st.session_state.playing = False
+
+    # ── controls row ──
+    ctrl1, ctrl2, ctrl3 = st.columns([1, 1, 6])
+    with ctrl1:
+        if st.button("▶ Play" if not st.session_state.playing
+                     else "⏸ Pause"):
+            st.session_state.playing = not st.session_state.playing
+            if st.session_state.playing:
+                st.session_state.tick = 0
+    with ctrl2:
+        if st.button("↺ Reset"):
+            st.session_state.tick = 0
+            st.session_state.playing = False
+
+    # manual slider (disabled during playback)
+    tick_idx = st.slider(
+        "Event index",
+        min_value=0,
+        max_value=len(SIM_LOG) - 1,
+        value=st.session_state.tick,
+        disabled=st.session_state.playing,
+        key="manual_slider"
+    )
+    if not st.session_state.playing:
+        st.session_state.tick = tick_idx
+
+    # ── current snapshot ──
+    sel     = SIM_LOG.iloc[st.session_state.tick]
     top3    = sel["top3"]
     snap_dt = sel["date"]
     snap_ev = sel["event"]
 
+    # progress bar
+    pct = int((st.session_state.tick / (len(SIM_LOG)-1)) * 100)
+    st.markdown(
+        f'<div style="background:#F0F0F0;height:3px;width:100%;margin-bottom:20px">'
+        f'<div style="background:#C41E3A;height:3px;width:{pct}%"></div></div>',
+        unsafe_allow_html=True
+    )
+
+    # date + event label
     sec(f"Mediator Ranking · {snap_dt}")
     st.markdown(
         f'<div style="font-size:12px;color:#6B6B6B;margin-bottom:20px">'
@@ -408,7 +445,7 @@ with T[3]:
         unsafe_allow_html=True
     )
 
-    # podium circles
+    # ── podium circles ──
     if len(top3) >= 3:
         p1, p2, p3 = st.columns(3)
         for col_w, (name, score), border, sz, rnk in [
@@ -427,14 +464,36 @@ with T[3]:
                     f'<div style="font-size:15px;font-weight:700;color:#0A0A0A;'
                     f'text-align:center;line-height:1.2">{name}</div>'
                     f'<div style="font-family:IBM Plex Mono,monospace;'
-                    f'font-size:10px;color:#6B6B6B;margin-top:4px">{score:.4f}</div>'
-                    f'</div>'
+                    f'font-size:10px;color:#6B6B6B;margin-top:4px">'
+                    f'{score:.4f}</div></div>'
                     f'<div style="font-family:IBM Plex Mono,monospace;'
                     f'font-size:10px;color:#9B9B9B;letter-spacing:0.1em">'
                     f'{rnk}</div></div>',
                     unsafe_allow_html=True
                 )
 
+    # ── mediator score bars (all candidates at this tick) ──
+    sec("All Mediator Scores at This Moment")
+    all_scores = sorted(top3, key=lambda x: x[1], reverse=True)
+    max_score  = max(s for _,s in all_scores) if all_scores else 1
+    for name, score in all_scores:
+        bw = int((score / max_score) * 300) if max_score > 0 else 0
+        col = "#C41E3A" if name == top3[0][0] else "#1B3A6B"
+        st.markdown(
+            f'<div style="margin-bottom:10px">'
+            f'<div style="display:flex;justify-content:space-between;'
+            f'font-size:12px;margin-bottom:3px">'
+            f'<span style="color:#0A0A0A;font-weight:'
+            f'{"700" if name==top3[0][0] else "400"}">{name}</span>'
+            f'<span style="font-family:IBM Plex Mono,monospace;color:#6B6B6B">'
+            f'{score:.4f}</span></div>'
+            f'<div style="background:#F0F0F0;height:3px;width:100%">'
+            f'<div style="background:{col};height:3px;width:{bw}px"></div>'
+            f'</div></div>',
+            unsafe_allow_html=True
+        )
+
+    # ── key moments table ──
     sec("Mediator at Key Moments")
     key_moments = [
         ("2023-10-07","Oct 7 — Hamas attack"),
@@ -452,15 +511,26 @@ with T[3]:
             f'color:#6B6B6B">{hl}</span>',
             unsafe_allow_html=True
         )
-    st.markdown('<hr style="margin:4px 0 0 0;border:none;'
-                'border-top:1px solid #E5E5E5">', unsafe_allow_html=True)
-
+    st.markdown(
+        '<hr style="margin:4px 0 0 0;border:none;border-top:1px solid #E5E5E5">',
+        unsafe_allow_html=True
+    )
     for d, label in key_moments:
         match = SIM_LOG[SIM_LOG["date"] >= d]
         if not match.empty:
             row = match.iloc[0]
-            rc  = st.columns([2,2,1,4])
-            rc[0].markdown(mono(d, "#6B6B6B", "12px"), unsafe_allow_html=True)
+            # highlight if this is the current tick's date
+            is_now = (snap_dt >= d and
+                      (key_moments.index((d,label)) == len(key_moments)-1 or
+                       snap_dt < key_moments[key_moments.index((d,label))+1][0]
+                       if key_moments.index((d,label)) < len(key_moments)-1
+                       else True))
+            bg = "background:#F0F8FF;" if is_now else ""
+            rc = st.columns([2,2,1,4])
+            rc[0].markdown(
+                mono(d, "#C41E3A" if is_now else "#6B6B6B", "12px"),
+                unsafe_allow_html=True
+            )
             rc[1].markdown(
                 f'<span style="font-weight:600;font-size:13px;color:#1B3A6B">'
                 f'{row["top_mediator"]}</span>',
@@ -474,9 +544,12 @@ with T[3]:
                 f'<span style="font-size:12px;color:#0A0A0A">{label}</span>',
                 unsafe_allow_html=True
             )
-        st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F5F5F5">',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<hr style="margin:0;border:none;border-top:1px solid #F5F5F5">',
+            unsafe_allow_html=True
+        )
 
+    # finding + model vs reality (unchanged)
     st.markdown(
         '<div style="background:#F8F8F8;border-left:3px solid #1B3A6B;'
         'padding:16px 20px;margin:24px 0;font-size:13px;line-height:1.7;'
@@ -484,13 +557,10 @@ with T[3]:
         '<div style="font-size:10px;font-weight:700;text-transform:uppercase;'
         'letter-spacing:0.15em;color:#1B3A6B;margin-bottom:8px">Key Finding</div>'
         'Our structural model identifies <b>India and China</b> as best-positioned '
-        'mediators by network topology — large states maintaining non-hostile ties '
-        'to both camps. Real-world mediation was carried out by '
-        '<b>Qatar</b> (2023 hostage deal, 2025 Gaza ceasefire), '
-        '<b>Oman</b> (US–Iran back-channel, Strait of Hormuz MOU), and '
-        '<b>Pakistan</b> (Apr 2026 ceasefire, Jun 2026 14-point MOU). '
-        'This divergence shows structural position is '
-        '<em>necessary but not sufficient</em> for mediation.</div>',
+        'mediators by network topology. Real-world mediation was carried out by '
+        '<b>Qatar</b>, <b>Oman</b>, and <b>Pakistan</b>. This divergence shows '
+        'structural position is <em>necessary but not sufficient</em> for mediation.'
+        '</div>',
         unsafe_allow_html=True
     )
 
@@ -507,8 +577,8 @@ with T[3]:
                 f'<span style="font-family:IBM Plex Mono,monospace;color:#6B6B6B">'
                 f'{score:.4f}</span></div>'
                 f'<div style="background:#F0F0F0;height:3px;width:100%">'
-                f'<div style="background:#1B3A6B;height:3px;width:{bw}px"></div>'
-                f'</div></div>',
+                f'<div style="background:#1B3A6B;height:3px;width:{bw}px">'
+                f'</div></div></div>',
                 unsafe_allow_html=True
             )
     with col_real:
@@ -526,6 +596,16 @@ with T[3]:
                 f'{roles}</div></div>',
                 unsafe_allow_html=True
             )
+
+    # ── AUTO-ADVANCE (must be last in tab) ──
+    if st.session_state.playing:
+        import time
+        time.sleep(0.4)   # 0.4s per tick → full playback ~20 seconds
+        if st.session_state.tick < len(SIM_LOG) - 1:
+            st.session_state.tick += 1
+        else:
+            st.session_state.playing = False
+        st.rerun()
 
 # ═══════════════════════════════════════════════
 # TAB 5 — EVENT LOG
