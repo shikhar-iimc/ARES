@@ -18,7 +18,6 @@ st.set_page_config(
 st.markdown("""
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-    /* reset */
     html, body, [class*="css"] {
         font-family: 'IBM Plex Sans', -apple-system, sans-serif;
         color: #0A0A0A;
@@ -28,13 +27,10 @@ st.markdown("""
     [data-testid="collapsedControl"] { display: none; }
     section[data-testid="stSidebar"] { display: none; }
 
-    /* top accent bar */
     .top-bar {
         position: fixed; top: 0; left: 0; right: 0;
         height: 3px; background: #C41E3A; z-index: 9999;
     }
-
-    /* header */
     .ares-header {
         padding: 40px 0 24px 0;
         border-bottom: 1px solid #E5E5E5;
@@ -43,10 +39,8 @@ st.markdown("""
     .ares-wordmark {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 13px; font-weight: 500;
-        letter-spacing: 0.25em;
-        color: #C41E3A;
-        text-transform: uppercase;
-        margin-bottom: 4px;
+        letter-spacing: 0.25em; color: #C41E3A;
+        text-transform: uppercase; margin-bottom: 4px;
     }
     .ares-title {
         font-size: 28px; font-weight: 700;
@@ -55,38 +49,13 @@ st.markdown("""
     }
     .ares-sub {
         font-size: 13px; color: #6B6B6B;
-        font-weight: 400; letter-spacing: 0;
+        font-weight: 400;
     }
     .ares-affil {
         font-family: 'IBM Plex Mono', monospace;
         font-size: 11px; color: #9B9B9B;
         text-align: right; letter-spacing: 0.05em;
     }
-
-    /* nav tabs */
-    .nav-container {
-        display: flex; gap: 0;
-        border-bottom: 1px solid #E5E5E5;
-        margin-bottom: 32px;
-        padding-top: 4px;
-    }
-    .nav-tab {
-        padding: 10px 20px;
-        font-size: 13px; font-weight: 500;
-        color: #6B6B6B; cursor: pointer;
-        border-bottom: 2px solid transparent;
-        transition: all 0.15s;
-        text-decoration: none;
-        background: none; border-top: none;
-        border-left: none; border-right: none;
-        font-family: 'IBM Plex Sans', sans-serif;
-    }
-    .nav-tab.active {
-        color: #0A0A0A;
-        border-bottom: 2px solid #C41E3A;
-    }
-
-    /* stat cards */
     .stat-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
@@ -95,8 +64,7 @@ st.markdown("""
         margin-bottom: 32px;
     }
     .stat-card {
-        background: #FFFFFF;
-        padding: 20px 24px;
+        background: #FFFFFF; padding: 20px 24px;
     }
     .stat-label {
         font-size: 11px; font-weight: 500;
@@ -110,21 +78,13 @@ st.markdown("""
     }
     .stat-value.threat { color: #C41E3A; }
     .stat-value.stable { color: #1B7A3E; }
-    .stat-delta {
-        font-size: 11px; color: #6B6B6B;
-        margin-top: 4px;
-    }
-
-    /* section headers */
+    .stat-delta { font-size: 11px; color: #6B6B6B; margin-top: 4px; }
     .section-header {
         font-size: 11px; font-weight: 600;
         text-transform: uppercase; letter-spacing: 0.12em;
         color: #6B6B6B; margin-bottom: 16px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #F0F0F0;
+        padding-bottom: 8px; border-bottom: 1px solid #F0F0F0;
     }
-
-    /* phase table */
     .phase-row {
         display: grid;
         grid-template-columns: 80px 140px 1fr;
@@ -134,29 +94,18 @@ st.markdown("""
     }
     .phase-id {
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 11px; font-weight: 500;
-        color: #C41E3A;
+        font-size: 11px; font-weight: 500; color: #C41E3A;
     }
-    .phase-date {
-        font-size: 12px; color: #6B6B6B;
-        font-weight: 400;
-    }
-    .phase-desc {
-        font-size: 13px; color: #0A0A0A;
-        line-height: 1.5;
-    }
-
-    /* mediator podium */
+    .phase-date { font-size: 12px; color: #6B6B6B; }
+    .phase-desc { font-size: 13px; color: #0A0A0A; line-height: 1.5; }
     .podium-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 1px; background: #E5E5E5;
-        border: 1px solid #E5E5E5;
-        margin-bottom: 24px;
+        border: 1px solid #E5E5E5; margin-bottom: 24px;
     }
     .podium-card {
-        background: #FFFFFF; padding: 24px;
-        text-align: center;
+        background: #FFFFFF; padding: 24px; text-align: center;
     }
     .podium-rank {
         font-family: 'IBM Plex Mono', monospace;
@@ -172,8 +121,6 @@ st.markdown("""
         font-family: 'IBM Plex Mono', monospace;
         font-size: 13px; color: #6B6B6B;
     }
-
-    /* event timeline item */
     .event-row {
         display: grid;
         grid-template-columns: 100px 90px 100px 1fr 60px;
@@ -181,43 +128,34 @@ st.markdown("""
         border-bottom: 1px solid #F5F5F5;
         align-items: center; font-size: 12px;
     }
-    .event-date { color: #6B6B6B; font-family: 'IBM Plex Mono', monospace; }
+    .event-date {
+        color: #6B6B6B;
+        font-family: 'IBM Plex Mono', monospace;
+    }
     .event-actor { font-weight: 500; color: #0A0A0A; }
-    .event-type { color: #6B6B6B; }
     .event-desc { color: #0A0A0A; }
     .event-score {
         font-family: 'IBM Plex Mono', monospace;
         font-weight: 600; text-align: right;
     }
     .event-score.hostile { color: #C41E3A; }
-    .event-score.diplo { color: #1B7A3E; }
-
-    /* finding box */
+    .event-score.diplo   { color: #1B7A3E; }
     .finding-box {
         background: #F8F8F8;
         border-left: 3px solid #1B3A6B;
         padding: 16px 20px; margin: 24px 0;
-        font-size: 13px; line-height: 1.6;
-        color: #0A0A0A;
+        font-size: 13px; line-height: 1.6; color: #0A0A0A;
     }
     .finding-label {
         font-size: 10px; font-weight: 700;
         text-transform: uppercase; letter-spacing: 0.15em;
         color: #1B3A6B; margin-bottom: 6px;
     }
-
-    /* time slider */
-    .stSlider > div > div > div {
-        background: #C41E3A !important;
-    }
-    .stSlider [data-testid="stThumbValue"] {
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 11px;
-    }
-
-    /* hide streamlit chrome */
     #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding: 0 48px 48px 48px; max-width: 1400px; }
+    .block-container {
+        padding: 0 48px 48px 48px;
+        max-width: 1400px;
+    }
 </style>
 <div class="top-bar"></div>
 """, unsafe_allow_html=True)
@@ -234,26 +172,23 @@ G_INITIAL = data["g_initial"]
 G_FINAL   = data["g_final"]
 EVENTS_DF = data["events_df"]
 
-# ── PLOTLY THEME ──────────────────────────────────────────────
-PLOT_LAYOUT = dict(
-    template="plotly_white",
+# ── BASE PLOT LAYOUT (no axis keys) ──────────────────────────
+PLOT_BASE = dict(
     font=dict(family="IBM Plex Sans", size=12, color="#0A0A0A"),
     paper_bgcolor="#FFFFFF",
     plot_bgcolor="#FFFFFF",
     margin=dict(l=0, r=0, t=24, b=0),
-    xaxis=dict(
-        gridcolor="#F0F0F0", linecolor="#E5E5E5",
-        tickfont=dict(family="IBM Plex Mono", size=11)
-    ),
-    yaxis=dict(
-        gridcolor="#F0F0F0", linecolor="#E5E5E5",
-        tickfont=dict(family="IBM Plex Mono", size=11)
-    ),
     legend=dict(
         orientation="h", yanchor="bottom",
         y=1.02, xanchor="left", x=0,
         font=dict(size=11)
     )
+)
+
+AXIS_STYLE = dict(
+    gridcolor="#F0F0F0",
+    linecolor="#E5E5E5",
+    tickfont=dict(family="IBM Plex Mono", size=11)
 )
 
 # ── HEADER ────────────────────────────────────────────────────
@@ -273,11 +208,13 @@ with col_hdr:
 with col_aff:
     st.markdown("""
     <div class="ares-header" style="text-align:right">
-        <div class="ares-affil">IIM CALCUTTA<br>SNA · GROUP 5<br>MBA BATCH 62</div>
+        <div class="ares-affil">
+            IIM CALCUTTA<br>SNA · GROUP 5<br>MBA BATCH 62
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-# ── NAVIGATION ────────────────────────────────────────────────
+# ── NAVIGATION TABS ───────────────────────────────────────────
 tabs = st.tabs([
     "OVERVIEW",
     "NETWORK",
@@ -286,16 +223,20 @@ tabs = st.tabs([
     "EVENT LOG"
 ])
 
-# ── TAB 1: OVERVIEW ───────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# TAB 1 — OVERVIEW
+# ═══════════════════════════════════════════════════════════════
 with tabs[0]:
 
-    # stat cards
     hostile_count = int((EVENTS_DF["goldstein"] < 0).sum())
     diplo_count   = int((EVENTS_DF["goldstein"] > 0).sum())
     iran_start    = float(SIM_LOG.iloc[0]["iran_might"])
     iran_end      = float(SIM_LOG.iloc[-1]["iran_might"])
-    iran_loss     = (1 - iran_end / iran_start) * 100 if iran_start > 0 else 0
-    final_med     = SIM_LOG.iloc[-1]["top_mediator"]
+    iran_loss     = (
+        (1 - iran_end / iran_start) * 100
+        if iran_start > 0 else 0
+    )
+    final_med = SIM_LOG.iloc[-1]["top_mediator"]
 
     st.markdown(f"""
     <div class="stat-grid">
@@ -327,19 +268,28 @@ with tabs[0]:
     </div>
     """, unsafe_allow_html=True)
 
-    # conflict phases
-    st.markdown('<div class="section-header">Conflict Phases</div>',
-                unsafe_allow_html=True)
-
+    # phases
+    st.markdown(
+        '<div class="section-header">Conflict Phases</div>',
+        unsafe_allow_html=True
+    )
     phases = [
-        ("PHASE I",  "Oct 2023 – Dec 2023",
-         "Hamas Oct 7 attack triggers regional cascade. Houthis and Hezbollah activate across multiple fronts. US expands Iran sanctions."),
-        ("PHASE II", "Jan 2024 – Oct 2024",
-         "First direct Iran–Israel military exchanges. Iran launches 300+ drones and missiles. Israel retaliates. Nasrallah and Sinwar killed."),
-        ("PHASE III","Nov 2024 – Feb 2026",
-         "Lebanon ceasefire. Assad regime falls — Iran loses Syria. Twelve-Day War (Jun 2025): US joins Israel strikes on Iranian nuclear sites."),
-        ("PHASE IV", "Feb 2026 – Present",
-         "Operation Epic Fury: 900 strikes, Khamenei killed. Strait of Hormuz crisis. Pakistan brokers ceasefire. 14-point MOU signed."),
+        ("PHASE I",   "Oct 2023 – Dec 2023",
+         "Hamas Oct 7 attack triggers regional cascade. "
+         "Houthis and Hezbollah activate across multiple "
+         "fronts. US expands Iran sanctions."),
+        ("PHASE II",  "Jan 2024 – Oct 2024",
+         "First direct Iran–Israel military exchanges. "
+         "Iran launches 300+ drones and missiles. Israel "
+         "retaliates. Nasrallah and Sinwar killed."),
+        ("PHASE III", "Nov 2024 – Feb 2026",
+         "Lebanon ceasefire. Assad regime falls — Iran "
+         "loses Syria. Twelve-Day War (Jun 2025): US joins "
+         "Israel strikes on Iranian nuclear sites."),
+        ("PHASE IV",  "Feb 2026 – Present",
+         "Operation Epic Fury: 900 strikes, Khamenei "
+         "killed. Strait of Hormuz crisis. Pakistan brokers "
+         "ceasefire. 14-point MOU signed."),
     ]
     for pid, dates, desc in phases:
         st.markdown(f"""
@@ -353,8 +303,10 @@ with tabs[0]:
     st.markdown("<br>", unsafe_allow_html=True)
 
     # might trajectory
-    st.markdown('<div class="section-header">National Power Trajectory</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-header">National Power Trajectory</div>',
+        unsafe_allow_html=True
+    )
 
     fig_might = go.Figure()
     for country, color, dash in [
@@ -372,17 +324,11 @@ with tabs[0]:
                 mode="lines"
             ))
 
-    fig_might.update_layout(
-        **PLOT_LAYOUT, height=260,
-        xaxis_title="", yaxis_title="Might Score [0 – 1]",
-        yaxis=dict(gridcolor="#F0F0F0", range=[0, 1.05])
-    )
-    # phase markers
     for d, lbl in [
-        ("2024-04-13","Direct exchange"),
-        ("2025-06-13","12-Day War"),
-        ("2026-02-28","Epic Fury"),
-        ("2026-04-08","Ceasefire"),
+        ("2024-04-13", "Direct exchange"),
+        ("2025-06-13", "12-Day War"),
+        ("2026-02-28", "Epic Fury"),
+        ("2026-04-08", "Ceasefire"),
     ]:
         fig_might.add_vline(
             x=d, line_dash="dot",
@@ -391,15 +337,27 @@ with tabs[0]:
             annotation_textangle=-90,
             annotation_font=dict(size=9, color="#999999")
         )
+
+    fig_might.update_layout(**PLOT_BASE, height=260)
+    fig_might.update_xaxes(**AXIS_STYLE, title_text="")
+    fig_might.update_yaxes(
+        **AXIS_STYLE,
+        title_text="Might Score [0 – 1]",
+        range=[0, 1.05]
+    )
     st.plotly_chart(fig_might, use_container_width=True)
 
-# ── TAB 2: NETWORK ────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# TAB 2 — NETWORK
+# ═══════════════════════════════════════════════════════════════
 with tabs[1]:
 
     col_ctrl, col_main = st.columns([1, 4])
     with col_ctrl:
-        st.markdown('<div class="section-header">Controls</div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-header">Controls</div>',
+            unsafe_allow_html=True
+        )
         net_choice = st.radio(
             "Network state",
             ["Initial — Oct 2023", "Final — Aug 2026"],
@@ -411,21 +369,25 @@ with tabs[1]:
         )
         st.markdown("---")
         st.markdown("""
-        <div style="font-size:12px;color:#6B6B6B;line-height:1.8">
-        <span style="color:#1B3A6B">●</span> US-aligned<br>
-        <span style="color:#C41E3A">●</span> Iran-aligned<br>
-        <span style="color:#888888">●</span> Straddler<br><br>
-        <span style="color:#1B7A3E">—</span> Friendly tie<br>
-        <span style="color:#C41E3A">—</span> Hostile tie<br><br>
+        <div style="font-size:12px;color:#6B6B6B;line-height:2">
+        <span style="color:#1B3A6B;font-size:16px">●</span>
+        US-aligned<br>
+        <span style="color:#C41E3A;font-size:16px">●</span>
+        Iran-aligned<br>
+        <span style="color:#888888;font-size:16px">●</span>
+        Straddler<br><br>
+        <span style="color:#1B7A3E">—</span> Friendly<br>
+        <span style="color:#C41E3A">—</span> Hostile<br><br>
         Node size = Might
         </div>
         """, unsafe_allow_html=True)
 
     with col_main:
-        G_show = (G_INITIAL if "Initial" in net_choice
-                  else G_FINAL)
+        G_show = (
+            G_INITIAL if "Initial" in net_choice
+            else G_FINAL
+        )
 
-        # circular layout sorted by alignment
         nodes_sorted = sorted(
             G_show.nodes(data=True),
             key=lambda x: x[1].get("alignment", 0),
@@ -453,8 +415,10 @@ with tabs[1]:
             edge_traces.append(go.Scatter(
                 x=[x0, x1, None], y=[y0, y1, None],
                 mode="lines",
-                line=dict(width=max(0.5, abs(rel)*2.5),
-                          color=color),
+                line=dict(
+                    width=max(0.5, abs(rel) * 2.5),
+                    color=color
+                ),
                 hoverinfo="none", showlegend=False
             ))
 
@@ -469,11 +433,15 @@ with tabs[1]:
             node_text.append(node)
             al = ndata.get("alignment", 0)
             m  = ndata.get("might", 0.1)
+            camp = (
+                "US" if al > 0.15 else
+                ("Iran" if al < -0.15 else "Neutral")
+            )
             node_hover.append(
                 f"<b>{node}</b><br>"
                 f"Might: {m:.3f}<br>"
                 f"Alignment: {al:+.3f}<br>"
-                f"Camp: {'US' if al>0.15 else ('Iran' if al<-0.15 else 'Neutral')}"
+                f"Camp: {camp}"
             )
             if al > 0.15:
                 node_color.append("#1B3A6B")
@@ -495,69 +463,84 @@ with tabs[1]:
             hovertext=node_hover,
             hoverinfo="text",
             marker=dict(
-                color=node_color, size=node_size,
+                color=node_color,
+                size=node_size,
                 line=dict(width=1.5, color="#FFFFFF")
             ),
             showlegend=False
         )
 
+        label = (
+            "Initial Network — Oct 2023"
+            if "Initial" in net_choice
+            else "Final Network — Aug 2026"
+        )
         fig_net = go.Figure(
             data=edge_traces + [node_trace]
         )
-        label = ("Initial Network — Oct 2023"
-                 if "Initial" in net_choice
-                 else "Final Network — Aug 2026")
         fig_net.update_layout(
             height=580,
-            xaxis=dict(showgrid=False, zeroline=False,
-                       showticklabels=False,
-                       scaleanchor="y"),
-            yaxis=dict(showgrid=False, zeroline=False,
-                       showticklabels=False),
             paper_bgcolor="#FFFFFF",
             plot_bgcolor="#FFFFFF",
             margin=dict(l=0, r=0, t=32, b=0),
             font=dict(family="IBM Plex Sans"),
             title=dict(
                 text=label,
-                font=dict(size=13, color="#6B6B6B",
-                          family="IBM Plex Sans"),
+                font=dict(
+                    size=13, color="#6B6B6B",
+                    family="IBM Plex Sans"
+                ),
                 x=0
             )
         )
+        fig_net.update_xaxes(
+            showgrid=False, zeroline=False,
+            showticklabels=False, scaleanchor="y"
+        )
+        fig_net.update_yaxes(
+            showgrid=False, zeroline=False,
+            showticklabels=False
+        )
         st.plotly_chart(fig_net, use_container_width=True)
 
-# ── TAB 3: TRAJECTORIES ───────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# TAB 3 — TRAJECTORIES
+# ═══════════════════════════════════════════════════════════════
 with tabs[2]:
 
-    st.markdown('<div class="section-header">Network Tension Over Time</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-header">Network Tension Over Time</div>',
+        unsafe_allow_html=True
+    )
 
     fig_traj = go.Figure()
     fig_traj.add_trace(go.Scatter(
-        x=SIM_LOG["date"], y=SIM_LOG["balance_energy"],
+        x=SIM_LOG["date"],
+        y=SIM_LOG["balance_energy"],
         name="Balance Energy",
         line=dict(color="#1B3A6B", width=2),
         mode="lines"
     ))
     fig_traj.add_trace(go.Scatter(
-        x=SIM_LOG["date"], y=SIM_LOG["frac_unbalanced"],
+        x=SIM_LOG["date"],
+        y=SIM_LOG["frac_unbalanced"],
         name="Fraction Unbalanced",
         line=dict(color="#C41E3A", width=2),
         mode="lines"
     ))
     fig_traj.add_trace(go.Scatter(
-        x=SIM_LOG["date"], y=SIM_LOG["top_score"],
+        x=SIM_LOG["date"],
+        y=SIM_LOG["top_score"],
         name="Top Mediator Score",
         line=dict(color="#888888", width=1.5, dash="dot"),
         mode="lines"
     ))
 
     for d, lbl in [
-        ("2024-04-13","First direct exchange"),
-        ("2025-06-13","Twelve-Day War"),
-        ("2026-02-28","Operation Epic Fury"),
-        ("2026-04-08","Pakistan ceasefire"),
+        ("2024-04-13", "First direct exchange"),
+        ("2025-06-13", "Twelve-Day War"),
+        ("2026-02-28", "Operation Epic Fury"),
+        ("2026-04-08", "Pakistan ceasefire"),
     ]:
         fig_traj.add_vline(
             x=d, line_dash="dot",
@@ -567,15 +550,15 @@ with tabs[2]:
             annotation_font=dict(size=9, color="#999")
         )
 
-    fig_traj.update_layout(
-        **PLOT_LAYOUT, height=340,
-        xaxis_title="",
-        yaxis_title="Value"
-    )
+    fig_traj.update_layout(**PLOT_BASE, height=340)
+    fig_traj.update_xaxes(**AXIS_STYLE, title_text="")
+    fig_traj.update_yaxes(**AXIS_STYLE, title_text="Value")
     st.plotly_chart(fig_traj, use_container_width=True)
 
-    st.markdown('<div class="section-header">Mediator Leadership — Event Count</div>',
-                unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-header">Mediator Leadership — Event Count</div>',
+        unsafe_allow_html=True
+    )
 
     med_counts = (
         SIM_LOG["top_mediator"]
@@ -587,13 +570,14 @@ with tabs[2]:
         "count", ascending=True
     )
 
+    top_country = med_counts.iloc[-1]["country"]
     fig_bar = go.Figure(go.Bar(
         x=med_counts["count"],
         y=med_counts["country"],
         orientation="h",
         marker=dict(
             color=[
-                "#C41E3A" if c == med_counts.iloc[-1]["country"]
+                "#C41E3A" if c == top_country
                 else "#E5E5E5"
                 for c in med_counts["country"]
             ],
@@ -601,19 +585,21 @@ with tabs[2]:
         ),
         text=med_counts["count"],
         textposition="outside",
-        textfont=dict(
-            family="IBM Plex Mono", size=11
-        )
+        textfont=dict(family="IBM Plex Mono", size=11)
     ))
     fig_bar.update_layout(
-        **PLOT_LAYOUT, height=340,
-        xaxis_title="Events as top mediator",
-        yaxis_title="",
-        showlegend=False
+        **PLOT_BASE, height=340, showlegend=False
     )
+    fig_bar.update_xaxes(
+        **AXIS_STYLE,
+        title_text="Events as top mediator"
+    )
+    fig_bar.update_yaxes(**AXIS_STYLE, title_text="")
     st.plotly_chart(fig_bar, use_container_width=True)
 
-# ── TAB 4: MEDIATOR ANALYSIS ──────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# TAB 4 — MEDIATOR ANALYSIS
+# ═══════════════════════════════════════════════════════════════
 with tabs[3]:
 
     col_snap, _ = st.columns([2, 1])
@@ -621,8 +607,8 @@ with tabs[3]:
         tick_idx = st.slider(
             "Scroll through the conflict timeline",
             min_value=0,
-            max_value=len(SIM_LOG)-1,
-            value=len(SIM_LOG)-1
+            max_value=len(SIM_LOG) - 1,
+            value=len(SIM_LOG) - 1
         )
 
     selected  = SIM_LOG.iloc[tick_idx]
@@ -632,8 +618,7 @@ with tabs[3]:
 
     st.markdown(
         f'<div class="section-header">'
-        f'Mediator Ranking · {snap_date}'
-        f'</div>',
+        f'Mediator Ranking · {snap_date}</div>',
         unsafe_allow_html=True
     )
     st.markdown(
@@ -643,14 +628,16 @@ with tabs[3]:
     )
 
     if len(top3_raw) >= 3:
-        medals = ["01", "02", "03"]
-        cards  = ""
+        cards = ""
         for i, (name, score) in enumerate(top3_raw[:3]):
-            top_class = "top" if i == 0 else ""
+            top_cls = "top" if i == 0 else ""
+            rank_lbl = ["RANK 01", "RANK 02", "RANK 03"][i]
             cards += f"""
             <div class="podium-card">
-                <div class="podium-rank">RANK {medals[i]}</div>
-                <div class="podium-country {top_class}">{name}</div>
+                <div class="podium-rank">{rank_lbl}</div>
+                <div class="podium-country {top_cls}">
+                    {name}
+                </div>
                 <div class="podium-score">{score:.4f}</div>
             </div>
             """
@@ -659,7 +646,7 @@ with tabs[3]:
             unsafe_allow_html=True
         )
 
-    # evolution table
+    # key moments table
     st.markdown(
         '<div class="section-header">Mediator at Key Moments</div>',
         unsafe_allow_html=True
@@ -685,55 +672,58 @@ with tabs[3]:
             <div class="event-row">
                 <div class="event-date">{d}</div>
                 <div class="event-actor">{med}</div>
-                <div class="event-score" style="color:#1B3A6B">{score:.4f}</div>
-                <div class="event-desc" style="grid-column:4/6">{label}</div>
+                <div class="event-score"
+                     style="color:#1B3A6B">{score:.4f}</div>
+                <div class="event-desc"
+                     style="grid-column:4/6">{label}</div>
             </div>
             """
     st.markdown(rows, unsafe_allow_html=True)
 
-    # findings
+    # finding
     st.markdown("""
     <div class="finding-box">
         <div class="finding-label">Key Finding</div>
         Our structural model identifies <strong>India and China</strong>
-        as the best-positioned mediators by network topology — large states
-        maintaining non-hostile ties to both camps throughout the conflict.
-        Real-world mediation was carried out by <strong>Qatar</strong>
-        (2023 hostage deal, 2025 Gaza ceasefire),
-        <strong>Oman</strong> (US–Iran back-channel, Strait of Hormuz MOU),
-        and <strong>Pakistan</strong> (Apr 2026 ceasefire, Jun 2026 14-point MOU).
-        This divergence is itself a finding: structural position is
-        <em>necessary but not sufficient</em> for mediation.
-        Political trust, geographic leverage, and pre-existing relationships
-        are not captured by the network model — pointing to clear model
-        extensions.
+        as best-positioned mediators by network topology — large states
+        maintaining non-hostile ties to both camps throughout the
+        conflict. Real-world mediation was carried out by
+        <strong>Qatar</strong> (2023 hostage deal, 2025 Gaza ceasefire),
+        <strong>Oman</strong> (US–Iran back-channel, Strait of Hormuz
+        MOU), and <strong>Pakistan</strong> (Apr 2026 ceasefire,
+        Jun 2026 14-point MOU). This divergence is itself a finding:
+        structural position is <em>necessary but not sufficient</em>
+        for mediation. Political trust, geographic leverage, and
+        pre-existing relationships are not captured by the network
+        model — pointing to clear extensions.
     </div>
     """, unsafe_allow_html=True)
 
     col_model, col_real = st.columns(2)
+
     with col_model:
         st.markdown(
             '<div class="section-header">Model Output</div>',
             unsafe_allow_html=True
         )
-        final_ranking = get_mediator_ranking(G_FINAL) \
-            if "get_mediator_ranking" in dir() else []
-
         final_med_data = SIM_LOG.iloc[-1]["top3"]
         for rank, (name, score) in enumerate(
                 final_med_data, 1):
-            bar_w = int(score * 600)
+            bar_w = min(int(score * 800), 280)
             st.markdown(f"""
-            <div style="margin-bottom:10px">
-                <div style="display:flex;justify-content:space-between;
-                            font-size:12px;margin-bottom:3px">
+            <div style="margin-bottom:12px">
+                <div style="display:flex;
+                            justify-content:space-between;
+                            font-size:12px;margin-bottom:4px">
                     <span><b>#{rank} {name}</b></span>
                     <span style="font-family:'IBM Plex Mono';
                                  color:#6B6B6B">{score:.4f}</span>
                 </div>
-                <div style="background:#F0F0F0;height:3px;width:100%">
-                    <div style="background:#1B3A6B;height:3px;
-                                width:{min(bar_w,300)}px"></div>
+                <div style="background:#F0F0F0;height:3px;
+                            width:100%">
+                    <div style="background:#1B3A6B;
+                                height:3px;width:{bar_w}px">
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -744,21 +734,28 @@ with tabs[3]:
             unsafe_allow_html=True
         )
         real = [
-            ("Qatar",    "Nov 2023 hostage deal · Jan 2025 Gaza ceasefire"),
-            ("Oman",     "2025 US–Iran back-channel · Strait of Hormuz MOU"),
-            ("Pakistan", "Apr 2026 ceasefire · Jun 2026 14-point MOU"),
+            ("Qatar",
+             "Nov 2023 hostage deal · Jan 2025 Gaza ceasefire"),
+            ("Oman",
+             "2025 US–Iran back-channel · Strait of Hormuz MOU"),
+            ("Pakistan",
+             "Apr 2026 ceasefire · Jun 2026 14-point MOU"),
         ]
         for name, roles in real:
             st.markdown(f"""
-            <div style="margin-bottom:14px">
+            <div style="margin-bottom:16px">
                 <div style="font-size:14px;font-weight:600;
-                            color:#0A0A0A;margin-bottom:2px">{name}</div>
+                            color:#0A0A0A;margin-bottom:2px">
+                    {name}
+                </div>
                 <div style="font-size:12px;color:#6B6B6B;
                             line-height:1.5">{roles}</div>
             </div>
             """, unsafe_allow_html=True)
 
-# ── TAB 5: EVENT LOG ──────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# TAB 5 — EVENT LOG
+# ═══════════════════════════════════════════════════════════════
 with tabs[4]:
 
     col_f1, col_f2, col_f3 = st.columns(3)
@@ -793,7 +790,6 @@ with tabs[4]:
         unsafe_allow_html=True
     )
 
-    # goldstein chart
     fig_gold = go.Figure()
     fig_gold.add_bar(
         x=filtered["date"].astype(str),
@@ -802,21 +798,24 @@ with tabs[4]:
             "#C41E3A" if g < 0 else "#1B7A3E"
             for g in filtered["goldstein"]
         ],
-        hovertext=filtered["actor1"] + " → " +
-                  filtered["actor2"] + "<br>" +
-                  filtered["description"],
+        hovertext=(
+            filtered["actor1"] + " → " +
+            filtered["actor2"] + "<br>" +
+            filtered["description"]
+        ),
         hoverinfo="text+y"
     )
     fig_gold.update_layout(
-        **PLOT_LAYOUT, height=220,
-        xaxis_title="", yaxis_title="Goldstein Scale",
-        showlegend=False,
-        bargap=0.15
+        **PLOT_BASE, height=220,
+        showlegend=False, bargap=0.15
+    )
+    fig_gold.update_xaxes(**AXIS_STYLE, title_text="")
+    fig_gold.update_yaxes(
+        **AXIS_STYLE, title_text="Goldstein Scale"
     )
     st.plotly_chart(fig_gold, use_container_width=True)
 
-    # event rows
-    header = """
+    header_row = """
     <div class="event-row" style="font-size:10px;
          font-weight:600;text-transform:uppercase;
          letter-spacing:0.1em;color:#6B6B6B;
@@ -826,12 +825,12 @@ with tabs[4]:
         <div>Score</div>
     </div>
     """
-    rows = ""
+    event_rows = ""
     for _, row in filtered.iterrows():
-        g     = row["goldstein"]
-        cls   = "hostile" if g < 0 else "diplo"
-        sign  = "+" if g >= 0 else ""
-        rows += f"""
+        g    = row["goldstein"]
+        cls  = "hostile" if g < 0 else "diplo"
+        sign = "+" if g >= 0 else ""
+        event_rows += f"""
         <div class="event-row">
             <div class="event-date">
                 {str(row['date'].date())}
@@ -844,7 +843,7 @@ with tabs[4]:
             </div>
         </div>
         """
-    st.markdown(header + rows, unsafe_allow_html=True)
+    st.markdown(header_row + event_rows, unsafe_allow_html=True)
 
 # ── FOOTER ────────────────────────────────────────────────────
 st.markdown("""
@@ -853,8 +852,8 @@ st.markdown("""
             display:flex;justify-content:space-between;
             font-size:11px;color:#9B9B9B;
             font-family:'IBM Plex Mono',monospace">
-    <span>ARES · Adaptive Relationship & Event Simulator</span>
-    <span>Data: World Bank API · Guardian API · GDELT · UN Voting Records</span>
+    <span>ARES · Adaptive Relationship &amp; Event Simulator</span>
+    <span>Data: World Bank · Guardian API · GDELT · UN Voting Records</span>
     <span>IIM Calcutta · SNA Group 5 · MBA Batch 62 · 2026</span>
 </div>
 """, unsafe_allow_html=True)
