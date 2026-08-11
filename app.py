@@ -110,9 +110,23 @@ G_INITIAL      = data["g_initial"]
 G_FINAL        = data["g_final"]
 EVENTS_DF      = data["events_df"]
 EDGE_SNAPSHOTS = data.get("edge_snapshots", None)
+N_TICKS        = len(SIM_LOG)
 
-N_TICKS = len(SIM_LOG)
+# ── COMPUTE PERCENTAGE MIGHT (fix for national power chart) ───
+def compute_pct_might(sim_log, country):
+    col = f"{country.lower()}_might"
+    if col not in sim_log.columns:
+        return None
+    start = sim_log.iloc[0][col]
+    if start == 0:
+        return None
+    return (sim_log[col] / start * 100).round(2)
 
+iran_pct   = compute_pct_might(SIM_LOG, "Iran")
+israel_pct = compute_pct_might(SIM_LOG, "Israel")
+usa_pct    = compute_pct_might(SIM_LOG, "USA")
+
+# ── PLOT BASE ─────────────────────────────────────────────────
 PB = dict(
     font=dict(family="IBM Plex Sans", size=12, color="#0A0A0A"),
     paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
@@ -140,11 +154,19 @@ def progress_bar(pct):
         f'<div style="background:#C41E3A;height:3px;width:{pct}%"></div></div>',
         unsafe_allow_html=True)
 
+def add_phase_lines(fig):
+    for d, l in [("2024-04-13","First direct exchange"),
+                 ("2025-06-13","Twelve-Day War"),
+                 ("2026-02-28","Operation Epic Fury"),
+                 ("2026-04-08","Pakistan ceasefire")]:
+        fig.add_vline(x=d, line_dash="dot", line_color="#CCCCCC",
+                      line_width=1, annotation_text=l,
+                      annotation_textangle=-90,
+                      annotation_font=dict(size=9, color="#999999"))
+
 def play_controls(key_prefix, n_ticks):
-    """Shared play/pause/reset controls. Returns current tick index."""
     tick_key    = f"{key_prefix}_tick"
     playing_key = f"{key_prefix}_playing"
-
     if tick_key    not in st.session_state: st.session_state[tick_key]    = n_ticks - 1
     if playing_key not in st.session_state: st.session_state[playing_key] = False
 
@@ -161,26 +183,18 @@ def play_controls(key_prefix, n_ticks):
             st.session_state[playing_key] = False
 
     tick = st.slider(
-        "Event index",
-        min_value=0, max_value=n_ticks - 1,
+        "Event index", min_value=0, max_value=n_ticks - 1,
         value=st.session_state[tick_key],
         disabled=st.session_state[playing_key],
         key=f"{key_prefix}_slider"
     )
     if not st.session_state[playing_key]:
         st.session_state[tick_key] = tick
-
     return st.session_state[tick_key], playing_key
 
 def build_network_figure(G_ref, edge_data, thresh, title):
-    """Build a Plotly network figure.
-    G_ref: reference graph for node attributes (alignment, might, name)
-    edge_data: dict {(a,b): relationship} for current tick
-    """
-    ns_sorted = sorted(
-        G_ref.nodes(data=True),
-        key=lambda x: x[1].get("alignment", 0), reverse=True
-    )
+    ns_sorted = sorted(G_ref.nodes(data=True),
+                       key=lambda x: x[1].get("alignment", 0), reverse=True)
     nn  = len(ns_sorted)
     pos = {}
     for i, (nd, _) in enumerate(ns_sorted):
@@ -189,50 +203,26 @@ def build_network_figure(G_ref, edge_data, thresh, title):
 
     etrs = []
     for (a, b), r in edge_data.items():
-        if abs(r) < thresh:
-            continue
-        if a not in pos or b not in pos:
-            continue
-        x0, y0 = pos[a]; x1, y1 = pos[b]
-        op  = min(0.9, 0.15 + abs(r) * 0.75)
+        if abs(r) < thresh: continue
+        if a not in pos or b not in pos: continue
+        x0,y0=pos[a]; x1,y1=pos[b]
+        op  = min(0.9, 0.15 + abs(r)*0.75)
         col = (f"rgba(27,122,62,{op})" if r >= 0
                else f"rgba(196,30,58,{op})")
         etrs.append(go.Scatter(
             x=[x0,x1,None], y=[y0,y1,None], mode="lines",
             line=dict(width=max(0.3, abs(r)*2.5), color=col),
-            hoverinfo="none", showlegend=False
-        ))
+            hoverinfo="none", showlegend=False))
 
-    nx_l,ny_l,nt_l,nh_l,nc_l,nz_l = [],[],[],[],[],[]
+    nx_l,ny_l,nt_l,nh_l,nc_l,nz_l=[],[],[],[],[],[]
     for nd, nd_d in G_ref.nodes(data=True):
-        x, y = pos[nd]
+        x,y=pos[nd]
         nx_l.append(x); ny_l.append(y); nt_l.append(nd)
-        al = nd_d.get("alignment", 0)
-        m  = nd_d.get("might", 0.1)
-        # find strongest relationship for hover
-        best_friend = max(
-            [(k[1] if k[0]==nd else k[0], v)
-             for k, v in edge_data.items()
-             if nd in k and v > 0],
-            key=lambda x: x[1], default=("—", 0)
-        )
-        worst_enemy = min(
-            [(k[1] if k[0]==nd else k[0], v)
-             for k, v in edge_data.items()
-             if nd in k and v < 0],
-            key=lambda x: x[1], default=("—", 0)
-        )
-        camp = "US" if al>0.15 else ("Iran" if al<-0.15 else "Neutral")
-        nh_l.append(
-            f"<b>{nd}</b><br>"
-            f"Camp: {camp}<br>"
-            f"Might: {m:.3f}<br>"
-            f"Closest ally: {best_friend[0]} ({best_friend[1]:+.3f})<br>"
-            f"Strongest enemy: {worst_enemy[0]} ({worst_enemy[1]:+.3f})"
-        )
-        nc_l.append("#1B3A6B" if al>0.15 else
-                    ("#C41E3A" if al<-0.15 else "#888888"))
-        nz_l.append(12 + 35 * float(m))
+        al=nd_d.get("alignment",0); m=nd_d.get("might",0.1)
+        camp="US" if al>0.15 else ("Iran" if al<-0.15 else "Neutral")
+        nh_l.append(f"<b>{nd}</b><br>Camp:{camp}<br>Might:{m:.3f}<br>Alignment:{al:+.3f}")
+        nc_l.append("#1B3A6B" if al>0.15 else ("#C41E3A" if al<-0.15 else "#888888"))
+        nz_l.append(12 + 35*float(m))
 
     ntr = go.Scatter(
         x=nx_l, y=ny_l, mode="markers+text",
@@ -241,21 +231,19 @@ def build_network_figure(G_ref, edge_data, thresh, title):
         hovertext=nh_l, hoverinfo="text",
         marker=dict(color=nc_l, size=nz_l,
                     line=dict(width=1.5, color="#FFFFFF")),
-        showlegend=False
-    )
+        showlegend=False)
+
     fig = go.Figure(data=etrs + [ntr])
-    fig.update_layout(
-        height=600, paper_bgcolor="#FFFFFF", plot_bgcolor="#FFFFFF",
-        margin=dict(l=0, r=0, t=36, b=0),
-        font=dict(family="IBM Plex Sans"),
-        title=dict(text=title,
-                   font=dict(size=13, color="#6B6B6B",
-                             family="IBM Plex Sans"), x=0)
-    )
-    fig.update_xaxes(showgrid=False, zeroline=False,
-                     showticklabels=False, scaleanchor="y")
-    fig.update_yaxes(showgrid=False, zeroline=False,
-                     showticklabels=False)
+    fig.update_layout(height=600, paper_bgcolor="#FFFFFF",
+                      plot_bgcolor="#FFFFFF",
+                      margin=dict(l=0,r=0,t=36,b=0),
+                      font=dict(family="IBM Plex Sans"),
+                      title=dict(text=title,
+                                 font=dict(size=13,color="#6B6B6B",
+                                           family="IBM Plex Sans"),x=0))
+    fig.update_xaxes(showgrid=False,zeroline=False,
+                     showticklabels=False,scaleanchor="y")
+    fig.update_yaxes(showgrid=False,zeroline=False,showticklabels=False)
     return fig
 
 # ── HEADER ────────────────────────────────────────────────────
@@ -298,11 +286,11 @@ with T[0]:
     fmed = SIM_LOG.iloc[-1]["top_mediator"]
 
     m1,m2,m3,m4,m5 = st.columns(5)
-    m1.metric("Total Events",        str(n_ev), "Oct 2023 – Aug 2026")
-    m2.metric("Hostile Events",      str(n_h),  f"{n_h/n_ev*100:.0f}% of total")
-    m3.metric("Diplomatic Events",   str(n_d),  f"{n_d/n_ev*100:.0f}% of total")
-    m4.metric("Iran Might Loss",     f"{ir_l:.0f}%", f"{ir_s:.3f} → {ir_e:.3f}")
-    m5.metric("Structural Mediator", fmed,      "by network position")
+    m1.metric("Total Events",        str(n_ev),       "Oct 2023 – Aug 2026")
+    m2.metric("Hostile Events",      str(n_h),        f"{n_h/n_ev*100:.0f}% of total")
+    m3.metric("Diplomatic Events",   str(n_d),        f"{n_d/n_ev*100:.0f}% of total")
+    m4.metric("Iran Power Loss",     f"{ir_l:.0f}%",  "vs initial capacity")
+    m5.metric("Structural Mediator", fmed,            "by network position")
 
     sec("Conflict Phases")
     phases = [
@@ -324,25 +312,43 @@ with T[0]:
         st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F5F5F5">',
                     unsafe_allow_html=True)
 
-    sec("National Power Trajectory")
+    # ── FIXED: National Power as % of initial ──
+    sec("National Power Trajectory  (% of initial capacity)")
     fig_m = go.Figure()
-    for ctry,col,dash in [("Iran","#C41E3A","solid"),
-                           ("Israel","#1B3A6B","solid"),
-                           ("USA","#1B7A3E","dash")]:
-        cn = f"{ctry.lower()}_might"
-        if cn in SIM_LOG.columns:
+
+    for series, label, col, dash in [
+        (iran_pct,   "Iran",   "#C41E3A", "solid"),
+        (israel_pct, "Israel", "#1B3A6B", "solid"),
+        (usa_pct,    "USA",    "#1B7A3E", "dash"),
+    ]:
+        if series is not None:
             fig_m.add_trace(go.Scatter(
-                x=SIM_LOG["date"], y=SIM_LOG[cn], name=ctry,
-                mode="lines", line=dict(color=col, width=2, dash=dash)))
-    for d,l in [("2024-04-13","Direct exchange"),("2025-06-13","12-Day War"),
-                ("2026-02-28","Epic Fury"),("2026-04-08","Ceasefire")]:
-        fig_m.add_vline(x=d, line_dash="dot", line_color="#CCCCCC", line_width=1,
-                        annotation_text=l, annotation_textangle=-90,
-                        annotation_font=dict(size=9,color="#999999"))
-    fig_m.update_layout(**PB, height=260)
+                x=SIM_LOG["date"], y=series, name=label,
+                mode="lines", line=dict(color=col, width=2, dash=dash),
+                hovertemplate=f"<b>{label}</b><br>%{{x}}<br>%{{y:.1f}}% of initial<extra></extra>"
+            ))
+
+    # add 100% reference line
+    fig_m.add_hline(y=100, line_dash="dot", line_color="#DDDDDD",
+                    line_width=1, annotation_text="Starting capacity (100%)",
+                    annotation_position="bottom right",
+                    annotation_font=dict(size=9, color="#AAAAAA"))
+
+    add_phase_lines(fig_m)
+    fig_m.update_layout(**PB, height=300)
     fig_m.update_xaxes(**AX, title_text="")
-    fig_m.update_yaxes(**AX, title_text="Might [0–1]", range=[0,1.05])
+    fig_m.update_yaxes(**AX, title_text="% of initial capacity",
+                       range=[0, 110])
     st.plotly_chart(fig_m, use_container_width=True)
+
+    # caption explaining the chart
+    st.markdown(
+        '<div style="font-size:11px;color:#9B9B9B;margin-top:-16px;margin-bottom:20px">'
+        'All three countries start at 100%. Iran degrades most severely from repeated '
+        'direct strikes across all four phases. Israel bears offensive costs from '
+        'sustained operations. USA degrades from prolonged campaign resource expenditure.'
+        '</div>',
+        unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════
 # TAB 2 — NETWORK (animated)
@@ -351,8 +357,7 @@ with T[1]:
     cc, cm = st.columns([1, 4])
     with cc:
         sec("Controls")
-        thresh = st.slider("Edge threshold", 0.0, 1.0, 0.25, 0.05,
-                           key="net_thresh")
+        thresh = st.slider("Edge threshold", 0.0, 1.0, 0.25, 0.05, key="net_thresh")
         st.markdown("<br>", unsafe_allow_html=True)
         for dot_col, lbl in [("#1B3A6B","US-aligned"),
                               ("#C41E3A","Iran-aligned"),
@@ -375,29 +380,27 @@ with T[1]:
 
     with cm:
         if EDGE_SNAPSHOTS is not None:
-            # animated mode
             net_tick, net_playing_key = play_controls("net", N_TICKS)
-            pct = int((net_tick / max(N_TICKS-1, 1)) * 100)
-            progress_bar(pct)
+            pct_bar = int((net_tick / max(N_TICKS-1, 1)) * 100)
+            progress_bar(pct_bar)
 
             snap_row = SIM_LOG.iloc[net_tick]
             snap_dt  = snap_row["date"]
             snap_ev  = snap_row["event"]
 
-            # show current event
             st.markdown(
                 f'<div style="font-size:12px;color:#6B6B6B;margin-bottom:12px">'
                 f'{mono(snap_dt,"#C41E3A","12px")} &nbsp;·&nbsp; {snap_ev}</div>',
                 unsafe_allow_html=True)
 
             edge_data = EDGE_SNAPSHOTS[net_tick]
-            title_str = f"Conflict Network · {snap_dt}"
             fig_n = build_network_figure(
-                G_INITIAL, edge_data, thresh, title_str
+                G_INITIAL, edge_data, thresh,
+                f"Conflict Network · {snap_dt}"
             )
             st.plotly_chart(fig_n, use_container_width=True)
 
-            # relationship change summary
+            # relationship changes table
             if net_tick > 0:
                 prev_data = EDGE_SNAPSHOTS[net_tick - 1]
                 changes = []
@@ -411,7 +414,7 @@ with T[1]:
                 if changes:
                     sec("Largest Relationship Changes This Event")
                     hc = st.columns([2,2,2,2,2])
-                    for h,hl in zip(hc,["Country A","Country B","Before","After","Change"]):
+                    for h, hl in zip(hc,["Country A","Country B","Before","After","Change"]):
                         h.markdown(
                             f'<span style="font-size:10px;font-weight:700;'
                             f'text-transform:uppercase;letter-spacing:0.1em;'
@@ -433,9 +436,9 @@ with T[1]:
                             f'font-size:12px;font-weight:700;color:{col}">'
                             f'{sign}{dv:.3f}</span>',
                             unsafe_allow_html=True)
-                        st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F5F5F5">',unsafe_allow_html=True)
+                        st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F5F5F5">',
+                                    unsafe_allow_html=True)
 
-            # auto-advance
             if st.session_state[net_playing_key]:
                 time.sleep(0.5)
                 if st.session_state["net_tick"] < N_TICKS - 1:
@@ -443,13 +446,10 @@ with T[1]:
                 else:
                     st.session_state[net_playing_key] = False
                 st.rerun()
-
         else:
-            # fallback: static initial/final toggle
             net_ch = st.radio("Network state",
                               ["Initial — Oct 2023","Final — Aug 2026"],
-                              label_visibility="collapsed",
-                              key="net_static")
+                              label_visibility="collapsed", key="net_static")
             G_sh = G_INITIAL if "Initial" in net_ch else G_FINAL
             edge_data = {(a,b): G_sh[a][b]["relationship"]
                          for a,b in G_sh.edges()}
@@ -460,54 +460,128 @@ with T[1]:
             st.info("Upload updated ares_data.pkl with edge_snapshots for animated mode.")
 
 # ═══════════════════════════════════════════════
-# TAB 3 — TRAJECTORIES
+# TAB 3 — TRAJECTORIES (fixed)
 # ═══════════════════════════════════════════════
 with T[2]:
+
+    # ── FIXED: Balance Energy — show both measures prominently ──
     sec("Network Tension Over Time")
+
+    # check if energy has meaningful variation
+    be_range = SIM_LOG["balance_energy"].max() - SIM_LOG["balance_energy"].min()
+    fu_range = SIM_LOG["frac_unbalanced"].max() - SIM_LOG["frac_unbalanced"].min()
+
+    # plot frac_unbalanced on left axis (primary — this has variation)
+    # plot balance_energy on right axis (secondary)
     fig_t = go.Figure()
-    fig_t.add_trace(go.Scatter(x=SIM_LOG["date"],y=SIM_LOG["balance_energy"],
-                               name="Balance Energy",line=dict(color="#1B3A6B",width=2)))
-    fig_t.add_trace(go.Scatter(x=SIM_LOG["date"],y=SIM_LOG["frac_unbalanced"],
-                               name="Fraction Unbalanced",line=dict(color="#C41E3A",width=2)))
-    fig_t.add_trace(go.Scatter(x=SIM_LOG["date"],y=SIM_LOG["top_score"],
-                               name="Top Mediator Score",
-                               line=dict(color="#888888",width=1.5,dash="dot")))
-    for d,l in [("2024-04-13","First direct exchange"),
-                ("2025-06-13","Twelve-Day War"),
-                ("2026-02-28","Operation Epic Fury"),
-                ("2026-04-08","Pakistan ceasefire")]:
-        fig_t.add_vline(x=d,line_dash="dot",line_color="#CCCCCC",line_width=1,
-                        annotation_text=l,annotation_textangle=-90,
-                        annotation_font=dict(size=9,color="#999"))
-    fig_t.update_layout(**PB, height=340)
+
+    # frac unbalanced — primary story (red, solid)
+    fig_t.add_trace(go.Scatter(
+        x=SIM_LOG["date"], y=SIM_LOG["frac_unbalanced"] * 100,
+        name="Frustrated Triads (%)",
+        line=dict(color="#C41E3A", width=2.5),
+        yaxis="y1",
+        hovertemplate="<b>Frustrated Triads</b><br>%{x}<br>%{y:.1f}% of triads<extra></extra>"
+    ))
+
+    # balance energy — secondary (navy, dashed)
+    fig_t.add_trace(go.Scatter(
+        x=SIM_LOG["date"], y=SIM_LOG["balance_energy"],
+        name="Balance Energy",
+        line=dict(color="#1B3A6B", width=1.5, dash="dash"),
+        yaxis="y2",
+        hovertemplate="<b>Balance Energy</b><br>%{x}<br>%{y:.4f}<extra></extra>"
+    ))
+
+    # top mediator score (gray dotted)
+    fig_t.add_trace(go.Scatter(
+        x=SIM_LOG["date"], y=SIM_LOG["top_score"],
+        name="Top Mediator Score",
+        line=dict(color="#AAAAAA", width=1.5, dash="dot"),
+        yaxis="y1",
+        hovertemplate="<b>Top Mediator Score</b><br>%{x}<br>%{y:.4f}<extra></extra>"
+    ))
+
+    add_phase_lines(fig_t)
+
+    fig_t.update_layout(
+        **PB, height=360,
+        yaxis=dict(
+            title="Frustrated Triads (%) / Mediator Score",
+            gridcolor="#F0F0F0", linecolor="#E5E5E5",
+            tickfont=dict(family="IBM Plex Mono", size=10, color="#555555"),
+            side="left"
+        ),
+        yaxis2=dict(
+            title="Balance Energy",
+            gridcolor="#F0F0F0", linecolor="#E5E5E5",
+            tickfont=dict(family="IBM Plex Mono", size=10, color="#1B3A6B"),
+            side="right", overlaying="y",
+            showgrid=False
+        ),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                    xanchor="left", x=0, font=dict(size=11, color="#0A0A0A"))
+    )
     fig_t.update_xaxes(**AX, title_text="")
-    fig_t.update_yaxes(**AX, title_text="Value")
     st.plotly_chart(fig_t, use_container_width=True)
 
-    sec("Mediator Leadership")
+    # interpretation caption
+    st.markdown(
+        '<div style="font-size:11px;color:#9B9B9B;margin-top:-16px;margin-bottom:24px">'
+        '<b style="color:#C41E3A">Red line (Frustrated Triads):</b> '
+        'percentage of all 1,330 triangles in contradiction — higher = more network tension. '
+        'Spikes at escalation events; drops when camps crystallise. &nbsp;'
+        '<b style="color:#1B3A6B">Navy dashed (Balance Energy):</b> '
+        'more negative = more stable. Near-zero indicates relationship magnitudes '
+        'have decayed — a known model limitation from aggressive decay parameters.'
+        '</div>',
+        unsafe_allow_html=True)
+
+    # ── NATIONAL POWER % in trajectories too ──
+    sec("National Power Degradation  (% of initial capacity)")
+    fig_pow = go.Figure()
+    for series, label, col, dash in [
+        (iran_pct,   "Iran",   "#C41E3A", "solid"),
+        (israel_pct, "Israel", "#1B3A6B", "solid"),
+        (usa_pct,    "USA",    "#1B7A3E", "dash"),
+    ]:
+        if series is not None:
+            fig_pow.add_trace(go.Scatter(
+                x=SIM_LOG["date"], y=series, name=label,
+                mode="lines", line=dict(color=col, width=2, dash=dash),
+                hovertemplate=f"<b>{label}</b><br>%{{x}}<br>%{{y:.1f}}%<extra></extra>"
+            ))
+    fig_pow.add_hline(y=100, line_dash="dot", line_color="#DDDDDD", line_width=1)
+    add_phase_lines(fig_pow)
+    fig_pow.update_layout(**PB, height=260)
+    fig_pow.update_xaxes(**AX, title_text="")
+    fig_pow.update_yaxes(**AX, title_text="% of initial capacity", range=[0,110])
+    st.plotly_chart(fig_pow, use_container_width=True)
+
+    sec("Mediator Leadership — Events as Top Mediator")
     mc2 = SIM_LOG["top_mediator"].value_counts().reset_index()
     mc2.columns = ["country","count"]
-    mc2 = mc2.sort_values("count",ascending=True)
+    mc2 = mc2.sort_values("count", ascending=True)
     top_c = mc2.iloc[-1]["country"]
     fig_b = go.Figure(go.Bar(
-        x=mc2["count"],y=mc2["country"],orientation="h",
+        x=mc2["count"], y=mc2["country"], orientation="h",
         marker=dict(color=["#C41E3A" if c==top_c else "#E5E5E5"
-                           for c in mc2["country"]],line=dict(width=0)),
-        text=mc2["count"],textposition="outside",
-        textfont=dict(family="IBM Plex Mono",size=11,color="#0A0A0A")
+                           for c in mc2["country"]], line=dict(width=0)),
+        text=mc2["count"], textposition="outside",
+        textfont=dict(family="IBM Plex Mono", size=11, color="#0A0A0A")
     ))
-    fig_b.update_layout(**PB,height=320,showlegend=False)
-    fig_b.update_xaxes(**AX,title_text="Event count")
-    fig_b.update_yaxes(**AX,title_text="")
-    st.plotly_chart(fig_b,use_container_width=True)
+    fig_b.update_layout(**PB, height=320, showlegend=False)
+    fig_b.update_xaxes(**AX, title_text="Events as top mediator")
+    fig_b.update_yaxes(**AX, title_text="")
+    st.plotly_chart(fig_b, use_container_width=True)
 
 # ═══════════════════════════════════════════════
 # TAB 4 — MEDIATOR ANALYSIS (animated)
 # ═══════════════════════════════════════════════
 with T[3]:
     med_tick, med_playing_key = play_controls("med", N_TICKS)
-    pct = int((med_tick / max(N_TICKS-1, 1)) * 100)
-    progress_bar(pct)
+    pct_bar = int((med_tick / max(N_TICKS-1, 1)) * 100)
+    progress_bar(pct_bar)
 
     sel     = SIM_LOG.iloc[med_tick]
     top3    = sel["top3"]
@@ -609,10 +683,14 @@ with T[3]:
         '<div style="font-size:10px;font-weight:700;text-transform:uppercase;'
         'letter-spacing:0.15em;color:#1B3A6B;margin-bottom:8px">Key Finding</div>'
         'Our structural model identifies <b>India and China</b> as best-positioned '
-        'mediators by network topology. Real-world mediation was carried out by '
-        '<b>Qatar</b> (2023), <b>Oman</b> (2025), and <b>Pakistan</b> (2026). '
+        'mediators by network topology — large states maintaining non-hostile ties '
+        'to both camps throughout the conflict. Real-world mediation was carried '
+        'out by <b>Qatar</b> (2023 hostage deal, 2025 Gaza ceasefire), '
+        '<b>Oman</b> (2025 US–Iran back-channel, Strait of Hormuz MOU), and '
+        '<b>Pakistan</b> (Apr 2026 ceasefire, Jun 2026 14-point MOU). '
         'This divergence shows structural position is '
-        '<em>necessary but not sufficient</em> for mediation.</div>',
+        '<em>necessary but not sufficient</em> for mediation — political trust, '
+        'geographic leverage, and pre-existing back-channels also matter.</div>',
         unsafe_allow_html=True)
 
     col_mod,col_real = st.columns(2)
@@ -646,7 +724,7 @@ with T[3]:
                 f'{roles}</div></div>',
                 unsafe_allow_html=True)
 
-    # auto-advance mediator
+    # auto-advance
     if st.session_state[med_playing_key]:
         time.sleep(0.4)
         if st.session_state["med_tick"] < N_TICKS - 1:
@@ -660,30 +738,47 @@ with T[3]:
 # ═══════════════════════════════════════════════
 with T[4]:
     f1,f2,f3 = st.columns(3)
-    with f1: show_h = st.checkbox("Hostile events",True)
-    with f2: show_d = st.checkbox("Diplomatic events",True)
-    with f3: srch   = st.text_input("Filter by actor",placeholder="e.g. Iran")
+    with f1: show_h = st.checkbox("Hostile events", True)
+    with f2: show_d = st.checkbox("Diplomatic events", True)
+    with f3: srch   = st.text_input("Filter by actor", placeholder="e.g. Iran")
 
     filt = EVENTS_DF.copy()
-    if not show_h: filt = filt[filt["goldstein"]>=0]
-    if not show_d: filt = filt[filt["goldstein"]<=0]
+    if not show_h: filt = filt[filt["goldstein"] >= 0]
+    if not show_d: filt = filt[filt["goldstein"] <= 0]
     if srch:
-        mask = (filt["actor1"].str.contains(srch,case=False,na=False)|
+        mask = (filt["actor1"].str.contains(srch,case=False,na=False) |
                 filt["actor2"].str.contains(srch,case=False,na=False))
         filt = filt[mask]
 
     sec(f"{len(filt)} Events")
+
+    # goldstein chart — clip to [-10, +10] to avoid stacking artifact
     fig_g = go.Figure()
     fig_g.add_bar(
-        x=filt["date"].astype(str),y=filt["goldstein"],
-        marker_color=["#C41E3A" if g<0 else "#1B7A3E" for g in filt["goldstein"]],
-        hovertext=(filt["actor1"]+" → "+filt["actor2"]+"<br>"+filt["description"]),
-        hoverinfo="text+y")
-    fig_g.update_layout(**PB,height=220,showlegend=False,bargap=0.15)
-    fig_g.update_xaxes(**AX,title_text="")
-    fig_g.update_yaxes(**AX,title_text="Goldstein Scale")
-    st.plotly_chart(fig_g,use_container_width=True)
+        x=filt["date"].astype(str),
+        y=filt["goldstein"].clip(-10, 10),
+        marker_color=["#C41E3A" if g<0 else "#1B7A3E"
+                      for g in filt["goldstein"]],
+        hovertext=(filt["actor1"]+" → "+filt["actor2"]
+                   +"<br>"+filt["description"]
+                   +"<br>Goldstein: "+filt["goldstein"].astype(str)),
+        hoverinfo="text"
+    )
+    fig_g.update_layout(**PB, height=220, showlegend=False, bargap=0.15)
+    fig_g.update_xaxes(**AX, title_text="")
+    fig_g.update_yaxes(**AX, title_text="Goldstein Scale",
+                       range=[-11, 11])
+    st.plotly_chart(fig_g, use_container_width=True)
 
+    # note about multiple same-date events
+    st.markdown(
+        '<div style="font-size:11px;color:#9B9B9B;margin-top:-16px;margin-bottom:16px">'
+        'Goldstein scale clipped to [−10, +10]. Multiple events on the same date '
+        '(e.g. Feb 28 2026) shown as separate bars, not stacked.'
+        '</div>',
+        unsafe_allow_html=True)
+
+    # table header
     hcols2 = st.columns([2,1.5,1.5,4,1])
     for hc,hl in zip(hcols2,["Date","Actor 1","Actor 2","Description","Score"]):
         hc.markdown(
@@ -693,6 +788,7 @@ with T[4]:
             unsafe_allow_html=True)
     st.markdown('<hr style="margin:4px 0 0 0;border:none;border-top:2px solid #E5E5E5">',
                 unsafe_allow_html=True)
+
     for _,row in filt.iterrows():
         g=row["goldstein"]; sign="+" if g>=0 else ""; gcol="#C41E3A" if g<0 else "#1B7A3E"
         rc=st.columns([2,1.5,1.5,4,1])
