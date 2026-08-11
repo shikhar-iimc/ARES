@@ -504,8 +504,8 @@ with T[2]:
 
     add_phase_lines(fig_t)
 
+    fig_t.update_layout(**PB, height=360)
     fig_t.update_layout(
-        **PB, height=360,
         yaxis=dict(
             title="Frustrated Triads (%) / Mediator Score",
             gridcolor="#F0F0F0", linecolor="#E5E5E5",
@@ -518,9 +518,7 @@ with T[2]:
             tickfont=dict(family="IBM Plex Mono", size=10, color="#1B3A6B"),
             side="right", overlaying="y",
             showgrid=False
-        ),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02,
-                    xanchor="left", x=0, font=dict(size=11, color="#0A0A0A"))
+        )
     )
     fig_t.update_xaxes(**AX, title_text="")
     st.plotly_chart(fig_t, use_container_width=True)
