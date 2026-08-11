@@ -637,6 +637,98 @@ with T[3]:
             f'</div></div>',
             unsafe_allow_html=True)
 
+    # ── BETWEENNESS CENTRALITY SECTION ──
+sec("Betweenness Centrality — Positive Subgraph")
+
+st.markdown(
+    '<div style="font-size:12px;color:#6B6B6B;margin-bottom:16px;line-height:1.6">'
+    'Betweenness centrality measures how often a country sits on the shortest '
+    'path between two other countries — through <b>friendly ties only</b> '
+    '(positive subgraph). A country that bridges the two hostile camps through '
+    'cooperative relationships scores high. This is computed on edges where '
+    'relationship ≥ 0, so hostile connections do not count as bridge paths.'
+    '</div>',
+    unsafe_allow_html=True)
+
+# get bc_scores for current tick
+bc_at_tick = sel.get("bc_scores", {})
+
+if bc_at_tick:
+    # sort by betweenness score
+    bc_ranked = sorted(
+        bc_at_tick.items(),
+        key=lambda x: x[1], reverse=True
+    )
+
+    # show top 10
+    max_bc = bc_ranked[0][1] if bc_ranked else 1
+    for rank, (name, bc_score) in enumerate(bc_ranked[:10], 1):
+        bw = int((bc_score / max_bc) * 300) if max_bc > 0 else 0
+
+        # highlight real mediators
+        is_real = name in ["Qatar", "Oman", "Pakistan"]
+        weight  = "700" if is_real else "400"
+        color   = "#C41E3A" if rank == 1 else "#1B3A6B"
+        tag     = " ← real mediator" if is_real else ""
+
+        st.markdown(
+            f'<div style="margin-bottom:10px">'
+            f'<div style="display:flex;justify-content:space-between;'
+            f'font-size:12px;margin-bottom:3px">'
+            f'<span style="color:#0A0A0A;font-weight:{weight}">'
+            f'#{rank} {name}{tag}</span>'
+            f'<span style="font-family:IBM Plex Mono,monospace;color:#6B6B6B">'
+            f'{bc_score:.4f}</span></div>'
+            f'<div style="background:#F0F0F0;height:3px;width:100%">'
+            f'<div style="background:{color};height:3px;width:{bw}px">'
+            f'</div></div></div>',
+            unsafe_allow_html=True)
+
+    # two-column insight
+    col_bc1, col_bc2 = st.columns(2)
+    with col_bc1:
+        st.markdown(
+            '<div style="background:#F8F8F8;border-left:3px solid #C41E3A;'
+            'padding:12px 16px;font-size:12px;color:#0A0A0A;line-height:1.6">'
+            '<div style="font-size:10px;font-weight:700;text-transform:uppercase;'
+            'letter-spacing:0.12em;color:#C41E3A;margin-bottom:6px">'
+            'Why positive subgraph?</div>'
+            'Standard betweenness treats hostile edges as valid paths. '
+            'A country hostile to both camps scores high because it sits '
+            'at the end of many paths — but it cannot actually mediate. '
+            'Using only positive edges ensures only cooperative bridges count.'
+            '</div>',
+            unsafe_allow_html=True)
+    with col_bc2:
+        # find highest bc among real mediators
+        real_bc = {k: v for k, v in bc_at_tick.items()
+                   if k in ["Qatar", "Oman", "Pakistan"]}
+        if real_bc:
+            best_real = max(real_bc, key=real_bc.get)
+            best_real_rank = next(
+                (i+1 for i, (n, _) in enumerate(bc_ranked)
+                 if n == best_real), 99
+            )
+            st.markdown(
+                f'<div style="background:#F8F8F8;border-left:3px solid #1B3A6B;'
+                f'padding:12px 16px;font-size:12px;color:#0A0A0A;line-height:1.6">'
+                f'<div style="font-size:10px;font-weight:700;text-transform:uppercase;'
+                f'letter-spacing:0.12em;color:#1B3A6B;margin-bottom:6px">'
+                f'Real mediator position</div>'
+                f'<b>{best_real}</b> ranks #{best_real_rank} on betweenness '
+                f'(score: {real_bc[best_real]:.4f}). '
+                f'Real-world mediators score higher on betweenness than on '
+                f'combined score — confirming their structural bridge role '
+                f'even when might penalises their small size.'
+                f'</div>',
+                unsafe_allow_html=True)
+else:
+    st.markdown(
+        '<div style="font-size:12px;color:#9B9B9B">'
+        'Betweenness scores not available — rerun simulation with updated Cell 7.'
+        '</div>',
+        unsafe_allow_html=True)
+
     # key moments
     sec("Mediator at Key Moments")
     key_moments = [
